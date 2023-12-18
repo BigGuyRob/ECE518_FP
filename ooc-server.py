@@ -44,6 +44,14 @@ UP_ROLL = 20
 RIGHT_PITCH = 40
 LEFT_PITCH = -40
 
+FLEX_THRESHOLD = 500
+right_click_group_keys = [0, 1]
+RIGHT_CLICK_FLAG = False
+LAST_RIGHT_CLICK = False
+left_click_group_keys = [3,4]
+LEFT_CLICK_FLAG = False
+LAST_LEFT_CLICK = False
+
 def move_mouse(roll, pitch, mouse_pos_x, mouse_pos_y):
     if(roll > UP_ROLL):
         mouse_pos_y -= STEP_SIZE
@@ -73,6 +81,55 @@ def move_mouse(roll, pitch, mouse_pos_x, mouse_pos_y):
     mouse.move(mouse_pos_x,mouse_pos_y)
     return mouse_pos_x, mouse_pos_y
 
+
+def check_right_clicks(adcs):
+    rc = False
+    for adc in right_click_group_keys:
+            val = adcs[adc]
+            #we want all to be off if it was previously on
+            if(val > FLEX_THRESHOLD):
+                rc = True
+            else:
+                rc = False
+    
+    if(rc):
+        if(RIGHT_CLICK_FLAG):
+            #do nothing, we dont want to click again if we havent debounced
+            pass
+        else:
+            RIGHT_CLICK_FLAG = True
+            mouse.right_click() #if we are debounced, click
+    else:#the buttons are off
+        RIGHT_CLICK_FLAG = False #we can set the click flag to false and not click
+
+
+def check_left_clicks(adcs):
+    lc = False
+    for adc in left_click_group_keys:
+            val = adcs[adc]
+            #we want all to be off if it was previously on
+            if(val > FLEX_THRESHOLD):
+                lc = True
+            else:
+                lc = False
+    
+    if(lc):
+        if(LEFT_CLICK_FLAG):
+            #do nothing, we dont want to click again if we havent debounced
+            pass
+        else:
+            LEFT_CLICK_FLAG = True
+            #mouse.cl() #if we are debounced, click
+    else:#the buttons are off
+        LEFT_CLICK_FLAG = False #we can set the click flag to false and not click
+
+
+def check_bends(adcs):
+    for adc in adcs:
+        val = float(adc.split(":")[1])
+        if(val > FLEX_THRESHOLD):
+            print(f"bent {adc}")
+
 st = time.time()
 mouse_pos_x, mouse_pos_y = 0,0
 try:
@@ -85,6 +142,15 @@ try:
         data = json.loads(data)
         roll = data['roll']
         pitch = data['pitch']
+        f1 = f"f1:{data['f1']}"
+        f2 = f"f2:{data['f2']}"
+        f3 = f"f3:{data['f3']}"
+        f4 = f"f4:{data['f4']}"
+        f5 = f"f5:{data['f5']}"
+        adcs = [f1,f2,f3,f4,f5]
+        #check_right_clicks(adcs)
+        #check_left_clicks(adcs)
+        check_bends(adcs)
         dt = time.time() - st
         roll_axis.append(float(roll))
         pitch_axis.append(float(pitch))
